@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 add_action('admin_init', 'fmb_init_purchase_stock_tables');
 function fmb_init_purchase_stock_tables() {
     global $wpdb;
-    $version = '1.3';
+    $version = '1.4';
     $installed = get_option('fmb_purchase_stock_db_version');
 
     if ($installed === $version) {
@@ -32,6 +32,7 @@ function fmb_init_purchase_stock_tables() {
         KEY parent_id (parent_id)
     ) {$charset_collate};";
     dbDelta($sql_expense_cats);
+    $wpdb->query($sql_expense_cats);
 
     // Insert Default Expense Categories if empty
     $cat_count = $wpdb->get_var("SELECT COUNT(*) FROM {$table_expense_cats}");
@@ -67,6 +68,7 @@ function fmb_init_purchase_stock_tables() {
         KEY phone (phone)
     ) {$charset_collate};";
     dbDelta($sql_suppliers);
+    $wpdb->query($sql_suppliers);
 
     // 2. Purchases Table
     $table_purchases = $wpdb->prefix . 'fmb_purchases';
@@ -92,6 +94,7 @@ function fmb_init_purchase_stock_tables() {
         KEY purchase_date (purchase_date)
     ) {$charset_collate};";
     dbDelta($sql_purchases);
+    $wpdb->query($sql_purchases);
 
     // 3. Purchase Items Table
     $table_items = $wpdb->prefix . 'fmb_purchase_items';
@@ -111,6 +114,7 @@ function fmb_init_purchase_stock_tables() {
         KEY product_id (product_id)
     ) {$charset_collate};";
     dbDelta($sql_items);
+    $wpdb->query($sql_items);
 
     // 4. Stock Adjustments Table
     $table_adjustments = $wpdb->prefix . 'fmb_stock_adjustments';
@@ -130,6 +134,7 @@ function fmb_init_purchase_stock_tables() {
         KEY product_id (product_id)
     ) {$charset_collate};";
     dbDelta($sql_adjustments);
+    $wpdb->query($sql_adjustments);
 
     // 5. Expenses Table
     $table_expenses = $wpdb->prefix . 'fmb_expenses';
@@ -150,6 +155,7 @@ function fmb_init_purchase_stock_tables() {
         KEY category_id (category_id)
     ) {$charset_collate};";
     dbDelta($sql_expenses);
+    $wpdb->query($sql_expenses);
 
     // 6. Supplier Payments Table
     $table_supplier_payments = $wpdb->prefix . 'fmb_supplier_payments';
@@ -167,6 +173,7 @@ function fmb_init_purchase_stock_tables() {
         KEY supplier_id (supplier_id)
     ) {$charset_collate};";
     dbDelta($sql_supplier_payments);
+    $wpdb->query($sql_supplier_payments);
 
     update_option('fmb_purchase_stock_db_version', $version);
 }
@@ -286,7 +293,7 @@ function fmb_ajax_add_general_expense() {
         $category_name = sanitize_text_field($_POST['category'] ?? 'Uncategorized');
     }
 
-    $wpdb->insert($wpdb->prefix . 'fmb_expenses', array(
+    $res = $wpdb->insert($wpdb->prefix . 'fmb_expenses', array(
         'expense_date' => $expense_date, 
         'category_id' => $final_cat_id, 
         'category_name' => $category_name,
@@ -297,6 +304,10 @@ function fmb_ajax_add_general_expense() {
         'created_by' => get_current_user_id(), 
         'created_at' => current_time('mysql')
     ));
+
+    if ($res === false) {
+        wp_send_json_error('DB Error: ' . $wpdb->last_error);
+    }
 
     wp_send_json_success('Expense added successfully');
 }
