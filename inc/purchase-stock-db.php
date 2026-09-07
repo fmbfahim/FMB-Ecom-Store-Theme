@@ -289,12 +289,211 @@ function fmb_ajax_save_expense_category() {
     wp_send_json_success('Category saved');
 }
 
-// Dummy endpoints for complex features (Purchases) so forms don't crash
+// ==========================================
+// ADVANCED PURCHASE & SUPPLIER ENDPOINTS
+// ==========================================
+
 add_action('wp_ajax_fmb_ajax_save_purchase', 'fmb_ajax_save_purchase');
 function fmb_ajax_save_purchase() {
-    wp_send_json_error('Feature temporarily unavailable due to file corruption. Please restore backup.');
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+
+    global $wpdb;
+    $data_json = wp_unslash($_POST['purchase_data'] ?? '');
+    $data = json_decode($data_json, true);
+
+    if (empty($data) || empty($data['items'])) {
+        wp_send_json_error('Invalid purchase data');
+    }
+
+    $supplier_id = (int)($data['supplier_id'] ?? 0);
+    $supplier_name = sanitize_text_field($data['supplier_name'] ?? 'Unknown');
+    $purchase_date = sanitize_text_field($data['purchase_date'] ?? current_time('Y-m-d'));
+    $invoice_slip_no = sanitize_text_field($data['invoice_slip_no'] ?? '');
+    $payment_method = sanitize_text_field($data['payment_method'] ?? 'cash');
+    $notes = sanitize_textarea_field($data['notes'] ?? '');
+    $paid_amount = (float)($data['paid_amount'] ?? 0);
+
+    // Calculate totals
+    $total_amount = 0;
+    $total_items = 0;
+    foreach ($data['items'] as $item) {
+        $qty = (int)$item['quantity'];
+        $cost = (float)$item['unit_cost'];
+        $total_amount += ($qty * $cost);
+        $total_items += $qty;
+    }
+
+    $due_amount = max(0, $total_amount - $paid_amount);
+    $payment_status = ($due_amount > 0) ? 'partial' : 'paid';
+    $purchase_no = 'PUR-' . date('Ymd') . '-' . rand(1000, 9999);
+
+    // Insert purchase record
+    $wpdb->insert($wpdb->prefix . 'fmb_purchases', array(
+        'purchase_no' => $purchase_no,
+        'supplier_id' => $supplier_id,
+        'supplier_name' => $supplier_name,
+        'purchase_date' => $purchase_date,
+        'total_items' => $total_items,
+        'total_amount' => $total_amount,
+        'paid_amount' => $paid_amount,
+        'due_amount' => $due_amount,
+        'payment_method' => $payment_method,
+        'payment_status' => $payment_status,
+        'invoice_slip_no' => $invoice_slip_no,
+        'notes' => $notes,
+        'created_by' => get_current_user_id(),
+        'created_at' => current_time('mysql')
+    ));
+    $purchase_id = $wpdb->insert_id;
+
+    // Insert items & Update Stock
+    foreach ($data['items'] as $item) {
+        $product_id = (int)$item['product_id'];
+        $qty = (int)$item['quantity'];
+        $cost = (float)$item['unit_cost'];
+        $subtotal = $qty * $cost;
+
+        $product = wc_get_product($product_id);
+        $p_name = $product ? $product->get_name() : 'Unknown Product';
+        $sku = $product ? $product->get_sku() : '';
+        $var_text = '';
+        if ($product && $product->is_type('variation')) {
+            $p_name = wc_get_product($product->get_parent_id())->get_name();
+            $var_text = wc_get_formatted_variation($product, true);
+        }
+
+        $wpdb->insert($wpdb->prefix . 'fmb_purchase_items', array(
+            'purchase_id' => $purchase_id,
+            'product_id' => $product_id,
+            'product_name' => $p_name,
+            'variation_text' => $var_text,
+            'sku' => $sku,
+            'quantity' => $qty,
+            'unit_cost' => $cost,
+            'subtotal' => $subtotal,
+            'stock_updated' => 1
+        ));
+
+        // Adjust Stock using helper
+        fmb_manual_adjust_stock($product_id, 'add', $qty, "Purchase V: $purchase_no", $notes);
+        
+        // Update purchase cost meta
+        if ($product) {
+            $product->update_meta_data('_purchase_cost', $cost);
+            $product->save();
+        }
+    }
+
+    // Update Supplier Ledger
+    if ($supplier_id > 0) {
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->prefix}fmb_suppliers SET total_purchases = total_purchases + %f, total_paid = total_paid + %f, total_due = total_due + %f WHERE id = %d",
+            $total_amount, $paid_amount, $due_amount, $supplier_id
+        ));
+    }
+
+    wp_send_json_success(array('purchase_id' => $purchase_id, 'purchase_no' => $purchase_no));
 }
+
+add_action('wp_ajax_fmb_ajax_get_purchase_memo', 'fmb_ajax_get_purchase_memo');
+function fmb_ajax_get_purchase_memo() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+    
+    global $wpdb;
+    $id = (int)($_GET['id'] ?? 0);
+    $purchase = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchases WHERE id = %d", $id));
+    if (!$purchase) wp_send_json_error('Not found');
+
+    $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchase_items WHERE purchase_id = %d", $id));
+    $supplier = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_suppliers WHERE id = %d", $purchase->supplier_id));
+
+    wp_send_json_success(array(
+        'purchase' => $purchase,
+        'items' => $items,
+        'supplier' => $supplier
+    ));
+}
+
+add_action('wp_ajax_fmb_ajax_delete_purchase', 'fmb_ajax_delete_purchase');
+function fmb_ajax_delete_purchase() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+
+    global $wpdb;
+    $id = (int)($_POST['id'] ?? 0);
+    $purchase = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchases WHERE id = %d", $id));
+    
+    if (!$purchase) wp_send_json_error('Not found');
+
+    // Revert Stock
+    $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchase_items WHERE purchase_id = %d", $id));
+    foreach ($items as $item) {
+        fmb_manual_adjust_stock($item->product_id, 'subtract', $item->quantity, "Rollback Purchase: " . $purchase->purchase_no, '');
+    }
+
+    // Revert Supplier
+    if ($purchase->supplier_id > 0) {
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->prefix}fmb_suppliers SET total_purchases = GREATEST(0, total_purchases - %f), total_paid = GREATEST(0, total_paid - %f), total_due = GREATEST(0, total_due - %f) WHERE id = %d",
+            $purchase->total_amount, $purchase->paid_amount, $purchase->due_amount, $purchase->supplier_id
+        ));
+    }
+
+    $wpdb->delete($wpdb->prefix . 'fmb_purchase_items', array('purchase_id' => $id));
+    $wpdb->delete($wpdb->prefix . 'fmb_purchases', array('id' => $id));
+
+    wp_send_json_success('Purchase Rollbacked successfully');
+}
+
 add_action('wp_ajax_fmb_ajax_add_supplier_payment', 'fmb_ajax_add_supplier_payment');
 function fmb_ajax_add_supplier_payment() {
-    wp_send_json_error('Feature temporarily unavailable due to file corruption. Please restore backup.');
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+
+    global $wpdb;
+    $supplier_id = (int)($_POST['supplier_id'] ?? 0);
+    $amount = (float)($_POST['amount'] ?? 0);
+
+    if ($supplier_id <= 0 || $amount <= 0) wp_send_json_error('Invalid input');
+
+    $wpdb->query($wpdb->prepare(
+        "UPDATE {$wpdb->prefix}fmb_suppliers SET total_paid = total_paid + %f, total_due = GREATEST(0, total_due - %f) WHERE id = %d",
+        $amount, $amount, $supplier_id
+    ));
+
+    wp_send_json_success('Payment added successfully');
+}
+
+add_action('wp_ajax_fmb_ajax_get_supplier_ledger', 'fmb_ajax_get_supplier_ledger');
+function fmb_ajax_get_supplier_ledger() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+    
+    global $wpdb;
+    $id = (int)($_GET['id'] ?? 0);
+    $purchases = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchases WHERE supplier_id = %d ORDER BY purchase_date DESC", $id));
+    
+    ob_start();
+    if (empty($purchases)) {
+        echo '<p>No purchases found for this supplier.</p>';
+    } else {
+        echo '<table class="wp-list-table widefat fixed striped">';
+        echo '<thead><tr><th>Date</th><th>Voucher</th><th>Total Amount</th><th>Paid</th><th>Due</th></tr></thead>';
+        echo '<tbody>';
+        foreach ($purchases as $p) {
+            echo '<tr>';
+            echo '<td>' . esc_html($p->purchase_date) . '</td>';
+            echo '<td>' . esc_html($p->purchase_no) . '</td>';
+            echo '<td>' . wc_price($p->total_amount) . '</td>';
+            echo '<td>' . wc_price($p->paid_amount) . '</td>';
+            echo '<td>' . wc_price($p->due_amount) . '</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+    $html = ob_get_clean();
+
+    wp_send_json_success(array('html' => $html));
 }
