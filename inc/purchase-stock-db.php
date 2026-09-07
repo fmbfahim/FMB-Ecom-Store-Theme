@@ -238,20 +238,30 @@ function fmb_ajax_add_general_expense() {
     if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
 
     global $wpdb;
-    $expense_date = sanitize_text_field($_POST['expense_date'] ?? current_time('Y-m-d'));
+    $expense_date = sanitize_text_field($_POST['date'] ?? current_time('Y-m-d'));
     $category_id = (int)($_POST['category_id'] ?? 0);
+    $sub_category_id = (int)($_POST['sub_category_id'] ?? 0);
     $amount = (float)($_POST['amount'] ?? 0);
-    $payment_method = sanitize_text_field($_POST['payment_method'] ?? 'cash');
-    $description = sanitize_textarea_field($_POST['description'] ?? '');
+    $payment_method = sanitize_text_field($_POST['method'] ?? 'cash');
+    $reference_no = sanitize_text_field($_POST['reference'] ?? '');
+    $description = sanitize_textarea_field($_POST['notes'] ?? '');
 
     if ($amount <= 0) wp_send_json_error('Invalid amount');
 
-    $category_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fmb_expense_categories WHERE id = %d", $category_id));
+    // Use subcategory if selected
+    $final_cat_id = ($sub_category_id > 0) ? $sub_category_id : $category_id;
+    $category_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fmb_expense_categories WHERE id = %d", $final_cat_id));
 
     $wpdb->insert($wpdb->prefix . 'fmb_expenses', array(
-        'expense_date' => $expense_date, 'category_id' => $category_id, 'category_name' => $category_name,
-        'amount' => $amount, 'payment_method' => $payment_method, 'description' => $description,
-        'created_by' => get_current_user_id(), 'created_at' => current_time('mysql')
+        'expense_date' => $expense_date, 
+        'category_id' => $final_cat_id, 
+        'category_name' => $category_name,
+        'amount' => $amount, 
+        'payment_method' => $payment_method, 
+        'reference_no' => $reference_no,
+        'description' => $description,
+        'created_by' => get_current_user_id(), 
+        'created_at' => current_time('mysql')
     ));
 
     wp_send_json_success('Expense added successfully');
