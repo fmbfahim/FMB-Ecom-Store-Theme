@@ -206,3 +206,95 @@ function fmb_manual_adjust_stock($product_id, $type, $quantity, $reason = '', $n
     ));
     return array('product_id' => $product_id, 'prev_stock' => $prev_stock, 'new_stock' => $new_stock);
 }
+
+// ==========================================
+// AJAX ENDPOINTS
+// ==========================================
+
+add_action('wp_ajax_fmb_ajax_save_supplier', 'fmb_ajax_save_supplier');
+function fmb_ajax_save_supplier() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+
+    global $wpdb;
+    $name = sanitize_text_field($_POST['name'] ?? '');
+    $company = sanitize_text_field($_POST['company'] ?? '');
+    $phone = sanitize_text_field($_POST['phone'] ?? '');
+    $email = sanitize_email($_POST['email'] ?? '');
+    $address = sanitize_textarea_field($_POST['address'] ?? '');
+
+    if (empty($name)) wp_send_json_error('Name is required');
+
+    $wpdb->insert($wpdb->prefix . 'fmb_suppliers', array(
+        'name' => $name, 'company' => $company, 'phone' => $phone, 'email' => $email, 'address' => $address
+    ));
+
+    wp_send_json_success('Supplier added successfully');
+}
+
+add_action('wp_ajax_fmb_ajax_add_general_expense', 'fmb_ajax_add_general_expense');
+function fmb_ajax_add_general_expense() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+
+    global $wpdb;
+    $expense_date = sanitize_text_field($_POST['expense_date'] ?? current_time('Y-m-d'));
+    $category_id = (int)($_POST['category_id'] ?? 0);
+    $amount = (float)($_POST['amount'] ?? 0);
+    $payment_method = sanitize_text_field($_POST['payment_method'] ?? 'cash');
+    $description = sanitize_textarea_field($_POST['description'] ?? '');
+
+    if ($amount <= 0) wp_send_json_error('Invalid amount');
+
+    $category_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fmb_expense_categories WHERE id = %d", $category_id));
+
+    $wpdb->insert($wpdb->prefix . 'fmb_expenses', array(
+        'expense_date' => $expense_date, 'category_id' => $category_id, 'category_name' => $category_name,
+        'amount' => $amount, 'payment_method' => $payment_method, 'description' => $description,
+        'created_by' => get_current_user_id(), 'created_at' => current_time('mysql')
+    ));
+
+    wp_send_json_success('Expense added successfully');
+}
+
+add_action('wp_ajax_fmb_ajax_adjust_stock', 'fmb_ajax_adjust_stock');
+function fmb_ajax_adjust_stock() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+
+    $product_id = (int)($_POST['product_id'] ?? 0);
+    $type = sanitize_text_field($_POST['type'] ?? 'add');
+    $qty = (int)($_POST['qty'] ?? 0);
+    $notes = sanitize_textarea_field($_POST['notes'] ?? '');
+
+    $result = fmb_manual_adjust_stock($product_id, $type, $qty, 'Manual Adjustment', $notes);
+    if (is_wp_error($result)) {
+        wp_send_json_error($result->get_error_message());
+    }
+
+    wp_send_json_success('Stock adjusted');
+}
+
+add_action('wp_ajax_fmb_ajax_save_expense_category', 'fmb_ajax_save_expense_category');
+function fmb_ajax_save_expense_category() {
+    check_ajax_referer('fmb_purchase_stock_nonce', 'nonce');
+    if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
+    
+    global $wpdb;
+    $name = sanitize_text_field($_POST['name'] ?? '');
+    $parent_id = (int)($_POST['parent_id'] ?? 0);
+    if (empty($name)) wp_send_json_error('Name is required');
+
+    $wpdb->insert($wpdb->prefix . 'fmb_expense_categories', array('name' => $name, 'parent_id' => $parent_id));
+    wp_send_json_success('Category saved');
+}
+
+// Dummy endpoints for complex features (Purchases) so forms don't crash
+add_action('wp_ajax_fmb_ajax_save_purchase', 'fmb_ajax_save_purchase');
+function fmb_ajax_save_purchase() {
+    wp_send_json_error('Feature temporarily unavailable due to file corruption. Please restore backup.');
+}
+add_action('wp_ajax_fmb_ajax_add_supplier_payment', 'fmb_ajax_add_supplier_payment');
+function fmb_ajax_add_supplier_payment() {
+    wp_send_json_error('Feature temporarily unavailable due to file corruption. Please restore backup.');
+}
