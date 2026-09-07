@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 add_action('admin_init', 'fmb_init_purchase_stock_tables');
 function fmb_init_purchase_stock_tables() {
     global $wpdb;
-    $version = '1.4';
+    $version = '1.5';
     $installed = get_option('fmb_purchase_stock_db_version');
 
     if ($installed === $version) {
@@ -28,7 +28,7 @@ function fmb_init_purchase_stock_tables() {
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(255) NOT NULL,
         parent_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         KEY parent_id (parent_id)
     ) {$charset_collate};";
     dbDelta($sql_expense_cats);
@@ -64,7 +64,7 @@ function fmb_init_purchase_stock_tables() {
         total_paid DECIMAL(12,2) NOT NULL DEFAULT 0.00,
         total_due DECIMAL(12,2) NOT NULL DEFAULT 0.00,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         KEY phone (phone)
     ) {$charset_collate};";
     dbDelta($sql_suppliers);
@@ -88,7 +88,7 @@ function fmb_init_purchase_stock_tables() {
         notes TEXT NULL,
         created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         UNIQUE KEY purchase_no (purchase_no),
         KEY supplier_id (supplier_id),
         KEY purchase_date (purchase_date)
@@ -109,7 +109,7 @@ function fmb_init_purchase_stock_tables() {
         unit_cost DECIMAL(10,2) NOT NULL DEFAULT 0.00,
         subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00,
         stock_updated TINYINT(1) NOT NULL DEFAULT 1,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         KEY purchase_id (purchase_id),
         KEY product_id (product_id)
     ) {$charset_collate};";
@@ -130,7 +130,7 @@ function fmb_init_purchase_stock_tables() {
         notes TEXT NULL,
         created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         KEY product_id (product_id)
     ) {$charset_collate};";
     dbDelta($sql_adjustments);
@@ -150,7 +150,7 @@ function fmb_init_purchase_stock_tables() {
         attachment_id BIGINT UNSIGNED NULL,
         created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         KEY expense_date (expense_date),
         KEY category_id (category_id)
     ) {$charset_collate};";
@@ -169,7 +169,7 @@ function fmb_init_purchase_stock_tables() {
         notes TEXT NULL,
         created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
+        PRIMARY KEY  (id),
         KEY supplier_id (supplier_id)
     ) {$charset_collate};";
     dbDelta($sql_supplier_payments);

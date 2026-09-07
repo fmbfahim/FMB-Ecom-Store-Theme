@@ -287,8 +287,7 @@ function fmb_admin_expenses_page() {
                         <tbody>
                             <?php if(empty($expenses_list)): ?>
                                 <tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">
-                                    No expenses recorded yet.<br>
-                                    <?php if (!empty($wpdb->last_error)) echo "SQL ERROR: " . esc_html($wpdb->last_error); ?>
+                                    No expenses recorded yet.
                                 </td></tr>
                             <?php else: ?>
                                 <?php foreach($expenses_list as $exp): ?>
