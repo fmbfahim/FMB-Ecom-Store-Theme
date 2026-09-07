@@ -333,10 +333,23 @@ function fmb_admin_expenses_page() {
                 </div>
 
                 <?php 
-                    // Calculate totals
+                    // Calculate totals and advanced metrics
                     $total_exp = 0;
+                    $total_transactions = 0;
                     $cat_totals = array();
                     $filtered_expenses = array();
+                    
+                    // Prepare dates for the trend chart
+                    $dates_data = array();
+                    try {
+                        $start = new DateTime($report_start);
+                        $end = new DateTime($report_end);
+                        $end->modify('+1 day');
+                        $period = new DatePeriod($start, DateInterval::createFromDateString('1 day'), $end);
+                        foreach ($period as $dt) {
+                            $dates_data[$dt->format("d M")] = 0;
+                        }
+                    } catch (Exception $e) {}
 
                     if (!empty($expenses_list)) {
                         foreach ($expenses_list as $exp) {
@@ -344,106 +357,243 @@ function fmb_admin_expenses_page() {
                             if ($edate >= $report_start && $edate <= $report_end) {
                                 $filtered_expenses[] = $exp;
                                 $total_exp += (float)$exp->amount;
+                                $total_transactions++;
                                 
                                 $cat_name = !empty($exp->cat_name) ? $exp->cat_name : $exp->category;
                                 if (!isset($cat_totals[$cat_name])) $cat_totals[$cat_name] = 0;
                                 $cat_totals[$cat_name] += (float)$exp->amount;
+                                
+                                $fdate = date('d M', strtotime($exp->expense_date));
+                                if (isset($dates_data[$fdate])) {
+                                    $dates_data[$fdate] += (float)$exp->amount;
+                                }
                             }
                         }
                     }
                     
                     if(!empty($cat_totals)) arsort($cat_totals); // sort by highest amount
+                    
+                    // Top category
+                    $top_cat_name = 'None';
+                    $top_cat_amt = 0;
+                    if (!empty($cat_totals)) {
+                        reset($cat_totals);
+                        $top_cat_name = key($cat_totals);
+                        $top_cat_amt = current($cat_totals);
+                    }
+                    
+                    // Daily average
+                    $days = count($dates_data);
+                    $daily_avg = $days > 0 ? $total_exp / $days : 0;
+                    
+                    // Data for charts
+                    $chart_labels = array_keys($cat_totals);
+                    $chart_values = array_values($cat_totals);
+                    
+                    $trend_labels = array_keys($dates_data);
+                    $trend_values = array_values($dates_data);
                 ?>
 
-                <!-- KPI -->
-                <div class="fmb-kpi-grid" style="margin-bottom:20px; grid-template-columns: 1fr;">
-                    <div class="fmb-kpi-card card-rose" style="justify-content:center;">
-                        <div class="kpi-icon-wrap"><span class="dashicons dashicons-minus"></span></div>
-                        <div class="kpi-content" style="text-align:center;">
-                            <span class="kpi-label">Total Expenses for Period</span>
-                            <h2 class="kpi-val" style="font-size:32px;">৳ <?php echo number_format($total_exp, 0); ?></h2>
-                            <span style="font-size:12px; color:#64748b;"><?php echo date('d M, Y', strtotime($report_start)); ?> - <?php echo date('d M, Y', strtotime($report_end)); ?></span>
+                <!-- KPI Cards -->
+                <div class="fmb-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 25px;">
+                    <div class="fmb-kpi-card card-rose">
+                        <div class="kpi-icon-wrap"><span class="dashicons dashicons-money-alt"></span></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Expenses</span>
+                            <h2 class="kpi-val">৳ <?php echo number_format($total_exp, 0); ?></h2>
+                        </div>
+                    </div>
+                    
+                    <div class="fmb-kpi-card card-amber">
+                        <div class="kpi-icon-wrap"><span class="dashicons dashicons-calendar-alt"></span></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Daily Average</span>
+                            <h2 class="kpi-val">৳ <?php echo number_format($daily_avg, 0); ?></h2>
+                        </div>
+                    </div>
+                    
+                    <div class="fmb-kpi-card card-purple">
+                        <div class="kpi-icon-wrap"><span class="dashicons dashicons-chart-pie"></span></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Top Category</span>
+                            <h2 class="kpi-val" style="font-size:16px; margin-top:8px;"><?php echo esc_html($top_cat_name); ?></h2>
+                            <span style="font-size:12px; color:#64748b;">৳ <?php echo number_format($top_cat_amt, 0); ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="fmb-kpi-card card-blue">
+                        <div class="kpi-icon-wrap"><span class="dashicons dashicons-list-view"></span></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Transactions</span>
+                            <h2 class="kpi-val"><?php echo $total_transactions; ?></h2>
                         </div>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:25px;">
-                    <!-- Breakdown -->
-                    <div>
-                        <h3 style="padding:15px; margin:0; border-bottom:1px solid #e2e8f0; font-size:15px; background:#fff; border-radius:10px 10px 0 0; border:1px solid #e2e8f0;">Breakdown by Category</h3>
-                        <div class="fmb-table-card" style="border-radius:0 0 10px 10px; border-top:none;">
-                            <table class="fmb-order-hub-table" style="margin:0;">
-                                <tbody>
-                                    <?php if(empty($cat_totals)): ?>
-                                        <tr><td colspan="2" style="text-align:center; padding:20px;">No expenses found.</td></tr>
-                                    <?php else: ?>
-                                        <?php foreach($cat_totals as $cat => $amt): 
-                                            $pct = $total_exp > 0 ? ($amt / $total_exp) * 100 : 0;
-                                        ?>
-                                        <tr>
-                                            <td>
-                                                <strong style="display:block; margin-bottom:5px;"><?php echo esc_html($cat); ?></strong>
-                                                <div style="width:100%; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
-                                                    <div style="height:100%; background:#ef4444; width:<?php echo $pct; ?>%;"></div>
-                                                </div>
-                                            </td>
-                                            <td style="text-align:right; font-weight:700; color:#dc2626; vertical-align:top;">
-                                                ৳ <?php echo number_format($amt, 0); ?>
-                                                <div style="font-size:10px; color:#94a3b8; font-weight:normal;"><?php echo round($pct, 1); ?>%</div>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                <!-- Charts Section -->
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:25px; margin-bottom: 25px;">
+                    
+                    <!-- Breakdown Donut Chart -->
+                    <div class="fmb-table-card" style="padding:20px; display:flex; flex-direction:column;">
+                        <h3 style="margin:0 0 15px 0; font-size:15px; color:#0f172a;">Breakdown by Category</h3>
+                        <div style="flex:1; position:relative; min-height: 250px; display:flex; align-items:center; justify-content:center;">
+                            <?php if(empty($cat_totals)): ?>
+                                <p style="color:#64748b;">No data available.</p>
+                            <?php else: ?>
+                                <canvas id="expenseCatChart"></canvas>
+                            <?php endif; ?>
                         </div>
                     </div>
+                    
+                    <!-- Trend Bar Chart -->
+                    <div class="fmb-table-card" style="padding:20px; display:flex; flex-direction:column;">
+                        <h3 style="margin:0 0 15px 0; font-size:15px; color:#0f172a;">Daily Expense Trend</h3>
+                        <div style="flex:1; position:relative; min-height: 250px;">
+                            <canvas id="expenseTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Detailed List -->
-                    <div class="fmb-table-card">
-                        <h3 style="padding:15px; margin:0; border-bottom:1px solid #e2e8f0; font-size:15px;">Detailed Expenses</h3>
-                        <div style="max-height: 400px; overflow-y:auto;">
-                            <table class="fmb-order-hub-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Category</th>
-                                        <th>Ref / Notes</th>
-                                        <th style="text-align:right;">Amount</th>
+                <!-- Detailed List -->
+                <div class="fmb-table-card">
+                    <div style="padding:15px 20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="margin:0; font-size:16px;">Detailed Expenses</h3>
+                        <span style="font-size:12px; background:#f1f5f9; padding:4px 10px; border-radius:12px; color:#475569; font-weight:600;">
+                            <?php echo date('d M', strtotime($report_start)); ?> - <?php echo date('d M, Y', strtotime($report_end)); ?>
+                        </span>
+                    </div>
+                    <div style="max-height: 450px; overflow-y:auto;">
+                        <table class="fmb-order-hub-table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th style="padding-left:20px;">Date</th>
+                                    <th>Category</th>
+                                    <th>Payment Info</th>
+                                    <th>Notes</th>
+                                    <th style="text-align:right; padding-right:20px;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if(empty($filtered_expenses)): ?>
+                                    <tr><td colspan="5" style="text-align:center; padding:30px; color:#64748b;">No expenses recorded in this period.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach($filtered_expenses as $exp): ?>
+                                    <tr style="transition:background 0.2s; cursor:default;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                        <td style="padding-left:20px; font-weight:600; color:#334155;">
+                                            <?php echo date('d M, Y', strtotime($exp->expense_date)); ?>
+                                        </td>
+                                        <td>
+                                            <span style="display:inline-block; padding:3px 10px; background:#eff6ff; color:#2563eb; font-size:12px; font-weight:600; border-radius:4px; border:1px solid #bfdbfe;">
+                                                <?php 
+                                                    if (!empty($exp->cat_name)) {
+                                                        echo esc_html($exp->cat_name);
+                                                        if (!empty($exp->sub_name)) echo ' &rarr; ' . esc_html($exp->sub_name);
+                                                    } else {
+                                                        echo esc_html($exp->category);
+                                                    }
+                                                ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="font-size:12px; font-weight:600; text-transform:capitalize; color:#0f172a;">
+                                                <?php echo esc_html($exp->method ?? 'Cash'); ?>
+                                            </div>
+                                            <?php if(!empty($exp->reference)): ?>
+                                                <div style="font-size:11px; color:#64748b; margin-top:2px;">Ref: <?php echo esc_html($exp->reference); ?></div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td style="font-size:12px; color:#64748b;">
+                                            <?php echo esc_html(wp_trim_words($exp->notes, 10, '...')); ?>
+                                        </td>
+                                        <td style="text-align:right; padding-right:20px; font-size:15px; font-weight:800; color:#dc2626;">
+                                            ৳ <?php echo number_format($exp->amount, 0); ?>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if(empty($filtered_expenses)): ?>
-                                        <tr><td colspan="4" style="text-align:center; padding:20px;">No expenses found.</td></tr>
-                                    <?php else: ?>
-                                        <?php foreach($filtered_expenses as $exp): ?>
-                                        <tr>
-                                            <td style="font-size:12px;"><?php echo date('d M, Y', strtotime($exp->expense_date)); ?></td>
-                                            <td>
-                                                <span class="fmb-cat-tag">
-                                                    <?php 
-                                                        if (!empty($exp->cat_name)) {
-                                                            echo esc_html($exp->cat_name);
-                                                            if (!empty($exp->sub_name)) echo ' &rarr; ' . esc_html($exp->sub_name);
-                                                        } else {
-                                                            echo esc_html($exp->category);
-                                                        }
-                                                    ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div style="font-size:12px;"><?php echo esc_html($exp->reference); ?></div>
-                                                <div style="font-size:11px; color:#64748b;"><?php echo esc_html($exp->notes); ?></div>
-                                            </td>
-                                            <td style="text-align:right; font-weight:bold; color:#dc2626;">৳ <?php echo number_format($exp->amount, 0); ?></td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+
+                <!-- Initialize Charts -->
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        var catLabels = <?php echo json_encode($chart_labels); ?>;
+                        var catData = <?php echo json_encode($chart_values); ?>;
+                        
+                        if (catLabels.length > 0) {
+                            var ctxCat = document.getElementById('expenseCatChart').getContext('2d');
+                            new Chart(ctxCat, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: catLabels,
+                                    datasets: [{
+                                        data: catData,
+                                        backgroundColor: ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#06b6d4','#3b82f6','#6366f1','#a855f7','#ec4899'],
+                                        borderWidth: 2,
+                                        borderColor: '#fff',
+                                        hoverOffset: 4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { position: 'right', labels: { boxWidth:12, font:{size:11, family:'Inter'} } },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return ' ৳ ' + context.parsed.toLocaleString();
+                                                }
+                                            }
+                                        }
+                                    },
+                                    cutout: '70%'
+                                }
+                            });
+                        }
+
+                        var trendLabels = <?php echo json_encode($trend_labels); ?>;
+                        var trendData = <?php echo json_encode($trend_values); ?>;
+                        
+                        if (trendLabels.length > 0) {
+                            var ctxTrend = document.getElementById('expenseTrendChart').getContext('2d');
+                            new Chart(ctxTrend, {
+                                type: 'bar',
+                                data: {
+                                    labels: trendLabels,
+                                    datasets: [{
+                                        label: 'Daily Expense',
+                                        data: trendData,
+                                        backgroundColor: '#6366f1',
+                                        borderRadius: 4,
+                                        barPercentage: 0.6
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return ' ৳ ' + context.parsed.y.toLocaleString();
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false } },
+                                        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 } } }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                </script>
 
             </div>
 
