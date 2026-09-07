@@ -196,7 +196,6 @@ function fmb_get_expenses() {
             id, 
             expense_date, 
             category_id, 
-            sub_category_id, 
             category_name AS cat_name, 
             category_name AS category, 
             amount, 
@@ -282,6 +281,10 @@ function fmb_ajax_add_general_expense() {
     // Use subcategory if selected
     $final_cat_id = ($sub_category_id > 0) ? $sub_category_id : $category_id;
     $category_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fmb_expense_categories WHERE id = %d", $final_cat_id));
+    
+    if (empty($category_name)) {
+        $category_name = sanitize_text_field($_POST['category'] ?? 'Uncategorized');
+    }
 
     $wpdb->insert($wpdb->prefix . 'fmb_expenses', array(
         'expense_date' => $expense_date, 
