@@ -1368,43 +1368,51 @@ function fmb_admin_purchase_stock_page() {
 
     <!-- MODAL: Supplier Ledger -->
     <div class="fmb-modal-backdrop" id="fmb-supplier-ledger-modal" style="display:none;">
-        <div class="fmb-modal-box" style="max-width: 750px;">
-            <div class="fmb-modal-head">
-                <h3><span class="dashicons dashicons-media-document"></span> Supplier Ledger</h3>
-                <button type="button" class="fmb-modal-close-x" id="fmb-close-ledger-modal">&times;</button>
+        <div class="fmb-modal-box" style="max-width: 800px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div class="fmb-modal-head" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff; border-bottom: none;">
+                <h3 style="color: #fff;"><span class="dashicons dashicons-media-document" style="color: #60a5fa;"></span> Supplier Account Ledger</h3>
+                <button type="button" class="fmb-modal-close-x" id="fmb-close-ledger-modal" style="color: #94a3b8; transition: 0.2s;">&times;</button>
             </div>
-            <div class="fmb-modal-content">
-                <div style="margin-bottom:15px; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <span style="display:block; font-size:12px; color:#64748b;">Supplier Name</span>
-                        <strong id="ledger-sup-name" style="font-size:16px; color:#0f172a;">-</strong>
+            <div class="fmb-modal-content" style="background: #f8fafc; padding: 25px;">
+                <div style="margin-bottom:20px; padding:16px 20px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="width: 48px; height: 48px; background: #e0e7ff; color: #4338ca; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold;">
+                            <span class="dashicons dashicons-businessman"></span>
+                        </div>
+                        <div>
+                            <span style="display:block; font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Supplier Profile</span>
+                            <strong id="ledger-sup-name" style="font-size:18px; color:#0f172a; font-weight:800;">-</strong>
+                        </div>
                     </div>
-                    <div style="text-align:right;">
-                        <span style="display:block; font-size:12px; color:#64748b;">Current Due Balance</span>
-                        <strong id="ledger-sup-due" style="font-size:16px; color:#dc2626;">৳ 0</strong>
+                    <div style="text-align:right; background: #fef2f2; padding: 10px 16px; border-radius: 8px; border: 1px solid #fecaca;">
+                        <span style="display:block; font-size:11px; font-weight:700; color:#b91c1c; text-transform:uppercase; letter-spacing:0.5px;">Current Outstanding Due</span>
+                        <strong id="ledger-sup-due" style="font-size:22px; color:#dc2626; font-weight:900;">৳ 0</strong>
                     </div>
                 </div>
 
-                <div class="fmb-table-responsive" style="max-height: 400px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px;">
-                    <table class="fmb-order-hub-table fmb-memo-table" style="margin:0;">
-                        <thead style="position:sticky; top:0; z-index:10;">
+                <div class="fmb-table-responsive" style="max-height: 420px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <table class="fmb-order-hub-table fmb-memo-table" style="margin:0; width: 100%;">
+                        <thead style="position:sticky; top:0; z-index:10; background: #f1f5f9;">
                             <tr>
-                                <th style="width:100px;">Date</th>
-                                <th>Ref / Transaction</th>
-                                <th style="width:100px; text-align:right;">Purchase (Dr)</th>
-                                <th style="width:100px; text-align:right;">Payment (Cr)</th>
-                                <th style="width:110px; text-align:right;">Balance</th>
+                                <th style="width:110px; font-weight: 800; color:#334155;">Date</th>
+                                <th style="font-weight: 800; color:#334155;">Transaction Details</th>
+                                <th style="width:120px; text-align:right; font-weight: 800; color:#334155;">Bill / Purchase</th>
+                                <th style="width:120px; text-align:right; font-weight: 800; color:#334155;">Paid / Credit</th>
+                                <th style="width:130px; text-align:right; font-weight: 800; color:#334155;">Running Balance</th>
                             </tr>
                         </thead>
                         <tbody id="fmb-ledger-body">
-                            <tr><td colspan="5" style="text-align:center;">Loading ledger...</td></tr>
+                            <tr><td colspan="5" style="text-align:center; padding: 30px;">
+                                <span class="dashicons dashicons-update spinning" style="font-size:30px; color:#94a3b8;"></span>
+                                <div style="margin-top:10px; color:#64748b; font-weight:600;">Loading Ledger...</div>
+                            </td></tr>
                         </tbody>
                     </table>
                 </div>
                 
-                <div style="margin-top:16px; text-align:right;">
-                    <button type="button" class="fmb-btn fmb-btn-outline-print" onclick="window.print();">
-                        <span class="dashicons dashicons-printer"></span> Print Ledger
+                <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                    <button type="button" class="fmb-btn fmb-btn-outline-print" onclick="window.print();" style="background:#fff; border:1.5px solid #cbd5e1; color:#0f172a; border-radius:8px; padding: 10px 18px; font-weight:700;">
+                        <span class="dashicons dashicons-printer" style="color:#4338ca;"></span> Print Ledger Statement
                     </button>
                 </div>
             </div>

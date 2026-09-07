@@ -151,6 +151,23 @@ function fmb_init_purchase_stock_tables() {
     ) {$charset_collate};";
     dbDelta($sql_expenses);
 
+    // 6. Supplier Payments Table
+    $table_supplier_payments = $wpdb->prefix . 'fmb_supplier_payments';
+    $sql_supplier_payments = "CREATE TABLE IF NOT EXISTS {$table_supplier_payments} (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        supplier_id BIGINT UNSIGNED NOT NULL,
+        payment_date DATE NOT NULL,
+        amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+        payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
+        reference_no VARCHAR(100) NULL,
+        notes TEXT NULL,
+        created_by BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY supplier_id (supplier_id)
+    ) {$charset_collate};";
+    dbDelta($sql_supplier_payments);
+
     update_option('fmb_purchase_stock_db_version', $version);
 }
 
@@ -318,6 +335,10 @@ function fmb_ajax_save_purchase() {
 
     $supplier_id = (int)($data['supplier_id'] ?? 0);
     $supplier_name = sanitize_text_field($data['supplier_name'] ?? 'Unknown');
+    if ($supplier_id > 0) {
+        $db_name = $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fmb_suppliers WHERE id = %d", $supplier_id));
+        if ($db_name) $supplier_name = $db_name;
+    }
     $purchase_date = sanitize_text_field($data['purchase_date'] ?? current_time('Y-m-d'));
     $invoice_slip_no = sanitize_text_field($data['invoice_slip_no'] ?? '');
     $payment_method = sanitize_text_field($data['payment_method'] ?? 'cash');
@@ -432,7 +453,7 @@ function fmb_ajax_delete_purchase() {
     if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
 
     global $wpdb;
-    $id = (int)($_POST['id'] ?? 0);
+    $id = (int)($_POST['purchase_id'] ?? ($_POST['id'] ?? 0));
     $purchase = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchases WHERE id = %d", $id));
     
     if (!$purchase) wp_send_json_error('Not found');
@@ -465,8 +486,23 @@ function fmb_ajax_add_supplier_payment() {
     global $wpdb;
     $supplier_id = (int)($_POST['supplier_id'] ?? 0);
     $amount = (float)($_POST['amount'] ?? 0);
+    $date = sanitize_text_field($_POST['date'] ?? current_time('Y-m-d'));
+    $method = sanitize_text_field($_POST['method'] ?? 'cash');
+    $reference = sanitize_text_field($_POST['reference'] ?? '');
+    $notes = sanitize_textarea_field($_POST['notes'] ?? '');
 
     if ($supplier_id <= 0 || $amount <= 0) wp_send_json_error('Invalid input');
+
+    $wpdb->insert($wpdb->prefix . 'fmb_supplier_payments', array(
+        'supplier_id' => $supplier_id,
+        'payment_date' => $date,
+        'amount' => $amount,
+        'payment_method' => $method,
+        'reference_no' => $reference,
+        'notes' => $notes,
+        'created_by' => get_current_user_id(),
+        'created_at' => current_time('mysql')
+    ));
 
     $wpdb->query($wpdb->prepare(
         "UPDATE {$wpdb->prefix}fmb_suppliers SET total_paid = total_paid + %f, total_due = GREATEST(0, total_due - %f) WHERE id = %d",
@@ -482,28 +518,45 @@ function fmb_ajax_get_supplier_ledger() {
     if (!current_user_can('manage_woocommerce')) wp_send_json_error('Unauthorized');
     
     global $wpdb;
-    $id = (int)($_GET['id'] ?? 0);
-    $purchases = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_purchases WHERE supplier_id = %d ORDER BY purchase_date DESC", $id));
-    
-    ob_start();
-    if (empty($purchases)) {
-        echo '<p>No purchases found for this supplier.</p>';
-    } else {
-        echo '<table class="wp-list-table widefat fixed striped">';
-        echo '<thead><tr><th>Date</th><th>Voucher</th><th>Total Amount</th><th>Paid</th><th>Due</th></tr></thead>';
-        echo '<tbody>';
-        foreach ($purchases as $p) {
-            echo '<tr>';
-            echo '<td>' . esc_html($p->purchase_date) . '</td>';
-            echo '<td>' . esc_html($p->purchase_no) . '</td>';
-            echo '<td>' . wc_price($p->total_amount) . '</td>';
-            echo '<td>' . wc_price($p->paid_amount) . '</td>';
-            echo '<td>' . wc_price($p->due_amount) . '</td>';
-            echo '</tr>';
-        }
-        echo '</tbody></table>';
-    }
-    $html = ob_get_clean();
+    $id = (int)($_GET['supplier_id'] ?? ($_GET['id'] ?? 0));
+    $supplier = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fmb_suppliers WHERE id = %d", $id));
+    if (!$supplier) wp_send_json_error('Supplier not found');
 
-    wp_send_json_success(array('html' => $html));
+    $purchases = $wpdb->get_results($wpdb->prepare("SELECT purchase_date as date, 'Purchase' as type, purchase_no as reference, notes, total_amount as debit, 0 as credit, created_at FROM {$wpdb->prefix}fmb_purchases WHERE supplier_id = %d", $id));
+    
+    // Check if payments table exists, then query
+    $table_supplier_payments = $wpdb->prefix . 'fmb_supplier_payments';
+    $payments = array();
+    if ($wpdb->get_var("SHOW TABLES LIKE '{$table_supplier_payments}'") === $table_supplier_payments) {
+        $payments = $wpdb->get_results($wpdb->prepare("SELECT payment_date as date, 'Payment' as type, reference_no as reference, notes, 0 as debit, amount as credit, created_at FROM {$table_supplier_payments} WHERE supplier_id = %d", $id));
+    }
+
+    $ledger_items = array_merge($purchases, $payments);
+    usort($ledger_items, function($a, $b) {
+        return strtotime($a->created_at) - strtotime($b->created_at);
+    });
+
+    $ledger = array();
+    $balance = 0;
+    foreach ($ledger_items as $item) {
+        $balance += (float)$item->debit;
+        $balance -= (float)$item->credit;
+        $ledger[] = array(
+            'date' => $item->date,
+            'type' => $item->type,
+            'reference' => $item->reference,
+            'notes' => $item->notes,
+            'debit' => $item->debit,
+            'credit' => $item->credit,
+            'balance' => $balance
+        );
+    }
+    
+    // Sort descending for display (newest first)
+    $ledger = array_reverse($ledger);
+
+    wp_send_json_success(array(
+        'supplier' => $supplier,
+        'ledger' => $ledger
+    ));
 }
