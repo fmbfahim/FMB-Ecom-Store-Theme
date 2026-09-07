@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 add_action('admin_init', 'fmb_init_purchase_stock_tables');
 function fmb_init_purchase_stock_tables() {
     global $wpdb;
-    $version = '1.5';
+    $version = '1.6';
     $installed = get_option('fmb_purchase_stock_db_version');
 
     if ($installed === $version) {
@@ -174,6 +174,15 @@ function fmb_init_purchase_stock_tables() {
     ) {$charset_collate};";
     dbDelta($sql_supplier_payments);
     $wpdb->query($sql_supplier_payments);
+
+    // Fallback: manually add columns to fmb_expenses if dbDelta failed to upgrade it previously
+    $exp_cols = $wpdb->get_col("DESC {$table_expenses}", 0);
+    if (!empty($exp_cols)) {
+        if (!in_array('category_id', $exp_cols)) $wpdb->query("ALTER TABLE {$table_expenses} ADD COLUMN category_id BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER expense_date");
+        if (!in_array('category_name', $exp_cols)) $wpdb->query("ALTER TABLE {$table_expenses} ADD COLUMN category_name VARCHAR(255) NULL AFTER category_id");
+        if (!in_array('reference_no', $exp_cols)) $wpdb->query("ALTER TABLE {$table_expenses} ADD COLUMN reference_no VARCHAR(100) NULL");
+        if (!in_array('description', $exp_cols)) $wpdb->query("ALTER TABLE {$table_expenses} ADD COLUMN description TEXT NULL");
+    }
 
     update_option('fmb_purchase_stock_db_version', $version);
 }
