@@ -191,7 +191,21 @@ function fmb_get_expense_categories() {
 function fmb_get_expenses() {
     global $wpdb;
     $table = $wpdb->prefix . 'fmb_expenses';
-    return $wpdb->get_results("SELECT * FROM {$table} ORDER BY expense_date DESC, id DESC");
+    return $wpdb->get_results("
+        SELECT 
+            id, 
+            expense_date, 
+            category_id, 
+            sub_category_id, 
+            category_name AS cat_name, 
+            category_name AS category, 
+            amount, 
+            payment_method AS method, 
+            reference_no AS reference, 
+            description AS notes 
+        FROM {$table} 
+        ORDER BY expense_date DESC, id DESC
+    ");
 }
 
 function fmb_get_all_suppliers() {
