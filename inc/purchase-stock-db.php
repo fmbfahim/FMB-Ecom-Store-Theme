@@ -177,7 +177,7 @@ function fmb_get_expenses() {
     return $wpdb->get_results("SELECT * FROM {$table} ORDER BY expense_date DESC, id DESC");
 }
 
-function fmb_get_suppliers() {
+function fmb_get_all_suppliers() {
     global $wpdb;
     return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}fmb_suppliers ORDER BY name ASC");
 }
