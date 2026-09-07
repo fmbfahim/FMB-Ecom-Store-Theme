@@ -1,0 +1,777 @@
+/* Apply base font only to the plugin's wrapper to avoid affecting WP admin notices */
+#ic-main-dashboard-wrapper {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Make dashboard flush with WordPress admin edges by overriding default padding */
+#wpcontent, #wpbody-content {
+    padding: 0 !important;
+}
+
+/* Override the default FMB Engine wrapper margins */
+.fmb-engine-main-box {
+    margin: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Ensure the .wrap element, common in WP admin, gets the desired background and fills the space */
+.wrap#ic-main-dashboard-wrapper {
+    background-color: #f3f4f6; /* bg-gray-100 */
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: calc(100vh - 32px); /* Account for WP admin bar at top */
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    color: #4b5563; /* text-gray-600 */
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-size: 16px;
+}
+.tab-button:hover {
+    color: #13585c;
+    border-bottom-color: #208e97;
+}
+.tab-button.active {
+    color: #1a7278;
+    border-bottom-color: #1a7278;
+    font-weight: 500;
+}
+
+/* Override WordPress default focus styles - remove blue border only */
+.tab-button:focus,
+.tab-button.active:focus,
+#ic-main-dashboard-wrapper .tab-button:focus,
+#ic-main-dashboard-wrapper .tab-button.active:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Remove focus outline from plugin elements */
+#ic-main-dashboard-wrapper a:focus,
+#ic-main-dashboard-wrapper button:focus,
+#ic-main-dashboard-wrapper input:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+td.action-buttons-cell.whitespace-nowrap {
+    padding: 1rem 1rem;
+}
+
+.settings-card,
+.analytics-summary-card,
+.database-stats-card,
+.analytics-detail-card,
+.ic-filters-card,
+.ic-actions-card
+{
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    padding: 1.5rem;
+}
+
+.table-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    padding: 0;
+    overflow-x: auto;
+}
+
+.settings-input, .filter-input {
+    margin-top: 0.25rem;
+    display: block;
+    width: 100%;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #374151;
+}
+.settings-input:focus, .filter-input:focus {
+    border-color: #1a7278;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(26, 114, 120, 0.3);
+}
+select.filter-input {
+    padding-right: 2.5rem;
+}
+
+.settings-label, .filter-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+}
+
+.settings-description {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.btn-primary {
+    background-color: #1a7278;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+.btn-primary:hover {
+    background-color: #13585c;
+}
+.btn-primary:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(26, 114, 120, 0.5);
+}
+
+
+.btn-secondary {
+    background-color: white;
+    color: #374151;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+.btn-secondary:hover {
+    background-color: #f9fafb;
+}
+.btn-secondary:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    border-color: #1a7278;
+    box-shadow: 0 0 0 3px rgba(26, 114, 120, 0.3);
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+.btn-danger:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
+}
+
+
+.btn-action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.relative-cell .btn-action {
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 10;
+}
+.relative-cell.group:hover .btn-action {
+    opacity: 1;
+    visibility: visible;
+}
+.relative-cell .btn-action.copy-button { background-color: #3b82f6; }
+.relative-cell .btn-action.copy-button:hover { background-color: #2563eb; }
+.relative-cell .btn-action.bg-green-500 { background-color: #22c55e; }
+.relative-cell .btn-action.bg-green-500:hover { background-color: #16a34a; }
+
+.action-buttons-cell .btn-secondary {
+    background-color: #e5e7eb;
+    color: #374151;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+.action-buttons-cell .btn-secondary:hover {
+    background-color: #d1d5db;
+}
+.action-buttons-cell .btn-primary {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+.action-buttons-cell .btn-danger {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+
+.settings-field-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+.settings-field-group:last-child {
+    border-bottom: none;
+}
+.settings-field-group .settings-label {
+    min-width: 200px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+}
+.settings-field-group .settings-input,
+.settings-field-group .settings-text-value {
+    flex-grow: 1;
+}
+.settings-text-value {
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.progress-bar-bg {
+    background-color: #e5e7eb;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    height: 0.75rem;
+}
+.progress-bar-fill {
+    background-color: #1a7278;
+    height: 100%;
+    transition: width 0.3s ease-in-out;
+    border-radius: 0.25rem;
+}
+
+.db-stat-row, .analytics-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    font-size: 0.875rem;
+}
+.db-stat-row span:first-child, .analytics-stat-row span:first-child {
+    color: #4b5563;
+}
+.db-stat-row span:last-child, .analytics-stat-row span:last-child {
+    font-weight: 500;
+    color: #1f2937;
+}
+.analytics-stat-row .text-green-600 { color: #16a34a !important; }
+.analytics-stat-row .text-red-600 { color: #dc2626 !important; }
+.analytics-stat-row .text-custom-main { color: #1a7278 !important; }
+
+.recovery-table th, .checkout-table th,
+.recovery-table td, .checkout-table td {
+    vertical-align: middle; /* Ensure consistent vertical alignment for all cells */
+}
+
+.recovery-table th, .checkout-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    color: #4b5563;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.recovery-table tr:last-child td, .checkout-table tr:last-child td {
+    border-bottom: none;
+}
+.checkout-table .relative-cell {
+    position: relative;
+}
+.checkout-table .action-buttons-cell button,
+.checkout-table .action-buttons-cell a.btn-action {
+    margin-right: 0.25rem;
+}
+.checkout-table .action-buttons-cell button:last-child,
+.checkout-table .action-buttons-cell a.btn-action:last-child {
+    margin-right: 0;
+}
+
+.checkout-table th[data-column-key="actions"],
+.checkout-table td[data-column-key="actions"] {
+    min-width: 210px; /* Increased min-width slightly, adjust if needed */
+    white-space: nowrap; /* Ensure the cell itself doesn't allow wrapping of its content */
+}
+
+/* Responsive Table Columns */
+.checkout-table th[data-column-key="date"],
+.checkout-table td[data-column-key="date"],
+.checkout-table th[data-column-key="name"],
+.checkout-table td[data-column-key="name"],
+.checkout-table th[data-column-key="phone"],
+.checkout-table td[data-column-key="phone"],
+.checkout-table th[data-column-key="state"],
+.checkout-table td[data-column-key="state"],
+.checkout-table th[data-column-key="subtotal"],
+.checkout-table td[data-column-key="subtotal"],
+.checkout-table th[data-column-key="status"],
+.checkout-table td[data-column-key="status"] {
+    white-space: nowrap;
+}
+
+.checkout-table th[data-column-key="address"],
+.checkout-table td[data-column-key="address"] {
+    min-width: 220px;
+}
+
+.checkout-table th[data-column-key="products"],
+.checkout-table td[data-column-key="products"] {
+    min-width: 200px;
+}
+
+.checkout-table th[data-column-key="note"],
+.checkout-table td[data-column-key="note"] {
+    min-width: 200px;
+}
+
+.checkout-table th[data-column-key="courier"],
+.checkout-table td[data-column-key="courier"] {
+    min-width: 170px;
+}
+
+table#incompleteOrdersTable tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+}
+table#incompleteOrdersTable tbody tr:last-child {
+    border-bottom: none;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+    line-height: 1.25;
+}
+.status-pending { background-color: #fef3c7; color: #b45309; }
+.status-recovered { background-color: #d1fae5; color: #065f46; }
+.status-emailed { background-color: #e0f2fe; color: #0c4a6e; }
+
+#copyMessage {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background-color: #22c55e !important;
+    color: white !important;
+    padding: 0.75rem 1.25rem !important;
+    border-radius: 0.375rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important;
+    z-index: 999999 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    pointer-events: none !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    border: none !important;
+    outline: none !important;
+}
+#copyMessage.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.column-toggle-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    z-index: 5000;
+    min-width: 200px;
+    padding: 0.5rem;
+}
+.column-toggle-dropdown label {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+    border-radius: 0.25rem;
+}
+.column-toggle-dropdown label:hover {
+    background-color: #f3f4f6;
+}
+.column-toggle-dropdown input[type="checkbox"] {
+    margin-right: 0.5rem;
+    border-radius: 0.25rem;
+    border-color: #d1d5db;
+    color: #1a7278;
+    height: 1rem;
+    width: 1rem;
+}
+.column-toggle-dropdown input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 3px rgba(26, 114, 120, 0.3);
+    outline: none;
+}
+
+#wpbody-content .wrap {
+    padding-bottom: 20px;
+}
+
+.tablenav-pages {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+.tablenav-pages .page-numbers {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0.125rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: white;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition: all 0.15s ease-in-out;
+}
+.tablenav-pages .page-numbers:hover {
+    background-color: #f9fafb;
+    border-color: #adb5bd;
+}
+.tablenav-pages span.page-numbers.current {
+    background-color: #1a7278;
+    color: white;
+    border-color: #1a7278;
+    font-weight: 500;
+}
+.tablenav-pages .dots {
+    border: none;
+    background: none;
+    padding: 0.5rem 0.25rem;
+}
+
+.recovery-table td, .checkout-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #374151;
+    text-align: left;
+}
+input[type=date], input[type=datetime-local], input[type=datetime], input[type=email], input[type=month], input[type=number], input[type=password], input[type=search], input[type=tel], input[type=text], input[type=time], input[type=url], input[type=week], .wp-core-ui select {
+    padding: 0 8px;
+    line-height: 2;
+    min-height: 35px;
+    border: 1px solid #d1d5db;
+}
+.items-center .text-white {
+    color: #111827;
+}
+
+/* Products Modal Styles */
+.products-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.products-modal-content {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.products-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background-color: #1a7278;
+    border-bottom: 1px solid #13585c;
+}
+
+.products-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.products-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: #ffffff;
+    opacity: 0.8;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+}
+
+.products-modal-close:hover {
+    color: #ffffff;
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.products-modal-close svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.products-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.products-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.product-modal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.product-modal-item:hover {
+    background-color: #f3f4f6;
+}
+
+.product-modal-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.product-modal-number {
+    font-weight: 600;
+    color: #1a7278;
+    flex-shrink: 0;
+}
+
+.product-modal-name {
+    color: #374151;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.product-modal-details {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.product-modal-qty {
+    font-size: 0.875rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.product-modal-price {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a7278;
+    white-space: nowrap;
+}
+
+.view-all-products-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.75rem;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out;
+}
+
+.view-all-products-btn:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   FMB Engine Premium Incomplete Orders UI Overrides
+   ========================================================================== */
+#ic-main-dashboard-wrapper {
+    margin-top: 10px !important;
+    padding: 10px 0 !important;
+    background: transparent !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
+}
+
+#ic-main-dashboard-wrapper nav {
+    background: #ffffff !important;
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    display: inline-flex !important;
+    gap: 8px !important;
+}
+
+#ic-main-dashboard-wrapper .tab-button {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    border-bottom: none !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+#ic-main-dashboard-wrapper .tab-button:hover {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+}
+
+#ic-main-dashboard-wrapper .tab-button.active {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+}
+
+#ic-main-dashboard-wrapper #ic-filters-form {
+    background: #ffffff !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+    margin-bottom: 20px !important;
+}
+
+#ic-main-dashboard-wrapper table {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+#ic-main-dashboard-wrapper th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+#ic-main-dashboard-wrapper td {
+    padding: 14px 16px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 13px !important;
+    color: #1e293b !important;
+    vertical-align: middle !important;
+}
+
+#ic-main-dashboard-wrapper tr:hover td {
+    background: #f8fafc !important;
+}
+
+#ic-main-dashboard-wrapper input[type="text"],
+#ic-main-dashboard-wrapper input[type="date"],
+#ic-main-dashboard-wrapper select {
+    height: 38px !important;
+    border-radius: 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: #ffffff !important;
+}
+
+#ic-main-dashboard-wrapper input[type="text"]:focus,
+#ic-main-dashboard-wrapper input[type="date"]:focus,
+#ic-main-dashboard-wrapper select:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+#ic-main-dashboard-wrapper .btn-primary {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    height: 38px !important;
+    padding: 0 20px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+}
+
+#ic-main-dashboard-wrapper .btn-secondary {
+    background: #ffffff !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    height: 38px !important;
+    padding: 0 16px !important;
+    border-radius: 8px !important;
+    border: 1px solid #cbd5e1 !important;
+}
